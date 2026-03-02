@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>投资组合估值系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Portfolio Valuation System</p>
+          <h1>投资组合估值系统</h1>
+          <p id="statusLine" class="sub">等待导入初始估值表</p>
+        </div>
+        <div class="actions">
+          <a href="/research" class="btn ghost">进入研报聚合站</a>
+          <button id="syncBtn" class="btn">同步行情</button>
+          <button id="rebuildBtn" class="btn">重算估值</button>
+          <button id="refreshBtn" class="btn ghost">刷新</button>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>数据导入</h2>
+          <span class="hint">支持增量导入交易记录（自动去重）</span>
+        </div>
+
+        <div class="two-col">
+          <div class="table-wrap short">
+            <h3>导入初始估值表</h3>
+            <form id="initialImportForm" class="form-grid">
+              <input id="initialFile" name="file" type="file" accept=".xlsx,.xls" required />
+              <button type="submit" class="btn">导入初始估值</button>
+            </form>
+            <p id="initialImportResult" class="hint">--</p>
+          </div>
+
+          <div class="table-wrap short">
+            <h3>导入交易记录</h3>
+            <form id="transactionsImportForm" class="form-grid">
+              <input id="transactionsFile" name="file" type="file" accept=".xlsx,.xls" required />
+              <button type="submit" class="btn">导入交易记录</button>
+            </form>
+            <p id="transactionsImportResult" class="hint">--</p>
+          </div>
+        </div>
+
+        <div class="table-wrap short">
+          <h3>现金调剂</h3>
+          <form id="cashAdjustmentForm" class="form-grid">
+            <input name="effectiveDate" type="text" placeholder="日期 (YYYY-MM-DD)" required />
+            <select name="direction" required>
+              <option value="INCREASE">增加</option>
+              <option value="DECREASE">减少</option>
+            </select>
+            <input name="amount" type="number" step="0.01" placeholder="金额（元）" required />
+            <input name="note" placeholder="备注（可选）" />
+            <button type="submit" class="btn">新增现金调剂</button>
+          </form>
+          <p id="cashAdjustmentResult" class="hint">--</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>组合概览</h2>
+          <span id="latestValuationDate" class="hint">最近估值日期: --</span>
+        </div>
+
+        <div class="grid grid-3" id="summaryGrid"></div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3>组合单位净值（交易日）</h3>
+            <canvas id="navChart"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>核心指标</h3>
+            <table>
+              <tbody id="statsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>业绩分析</h2>
+          <span id="analysisRangeHint" class="hint">区间: --</span>
+        </div>
+
+        <form id="performanceForm" class="form-grid">
+          <input name="endDate" type="date" required />
+          <select name="rangePreset" required>
+            <option value="SINCE_INCEPTION">成立以来</option>
+            <option value="YTD">年初至今</option>
+            <option value="1M">近1个月</option>
+            <option value="3M">近3个月</option>
+            <option value="6M">近6个月</option>
+            <option value="1Y">近1年</option>
+            <option value="CUSTOM">自定义</option>
+          </select>
+          <input name="customStartDate" type="date" />
+          <button type="submit" class="btn">生成业绩分析</button>
+        </form>
+
+        <div class="grid grid-3" id="performanceSummaryGrid"></div>
+
+        <div class="two-col">
+          <div class="table-wrap short">
+            <h3>正收益贡献前三</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>标的</th>
+                  <th>贡献金额</th>
+                  <th>贡献率</th>
+                </tr>
+              </thead>
+              <tbody id="topPositiveBody"></tbody>
+            </table>
+          </div>
+
+          <div class="table-wrap short">
+            <h3>负收益贡献前三</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>标的</th>
+                  <th>贡献金额</th>
+                  <th>贡献率</th>
+                </tr>
+              </thead>
+              <tbody id="topNegativeBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="table-wrap medium">
+          <h3>持仓区间涨跌幅（含区间内清仓标的）</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>代码</th>
+                <th>名称</th>
+                <th>期初数量</th>
+                <th>期末数量</th>
+                <th>期初价</th>
+                <th>期末价</th>
+                <th>区间涨跌幅</th>
+                <th>贡献金额</th>
+                <th>贡献率</th>
+              </tr>
+            </thead>
+            <tbody id="holdingsReturnBody"></tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap short">
+          <h3>宽基指数区间收益对比（Tushare）</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>指数</th>
+                <th>代码</th>
+                <th>起始日</th>
+                <th>结束日</th>
+                <th>起始点位</th>
+                <th>结束点位</th>
+                <th>区间收益率</th>
+              </tr>
+            </thead>
+            <tbody id="benchmarkReturnBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>资产配置（最新）</h2>
+          <span class="hint">包含现金资产 CASH.CNY</span>
+        </div>
+
+        <div class="table-wrap medium">
+          <table>
+            <thead>
+              <tr>
+                <th>代码</th>
+                <th>名称</th>
+                <th>大类</th>
+                <th>数量</th>
+                <th>收盘价</th>
+                <th>市值</th>
+                <th>权重</th>
+              </tr>
+            </thead>
+            <tbody id="allocationTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>调仓交易记录</h2>
+          <span class="hint">Excel导入与手工记录统一展示</span>
+        </div>
+
+        <h3>手工新增调仓</h3>
+        <form id="rebalanceForm" class="form-grid">
+          <input name="effectiveDate" type="text" placeholder="日期 (YYYY-MM-DD)" required />
+          <input name="tsCode" placeholder="代码 (如 159659.SZ)" required />
+          <input name="instrumentName" placeholder="标的名称" required />
+          <select name="action" required>
+            <option value="BUY">BUY</option>
+            <option value="SELL">SELL</option>
+          </select>
+          <input name="quantity" type="number" step="1" placeholder="数量（份）" required />
+          <input name="tradeCost" type="number" step="0.0001" placeholder="成交价" required />
+          <input name="note" placeholder="备注（可选）" />
+          <button type="submit" class="btn">新增交易</button>
+        </form>
+
+        <div class="table-wrap medium">
+          <table>
+            <thead>
+              <tr>
+                <th>生效日期</th>
+                <th>代码</th>
+                <th>名称</th>
+                <th>动作</th>
+                <th>数量</th>
+                <th>成交价</th>
+                <th>来源</th>
+                <th>备注</th>
+                <th>创建时间</th>
+              </tr>
+            </thead>
+            <tbody id="transactionTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>估值诊断</h2>
+          <span class="hint">缺失价格填充与现金风险提示</span>
+        </div>
+        <div class="table-wrap short">
+          <table>
+            <tbody id="diagnosticTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>

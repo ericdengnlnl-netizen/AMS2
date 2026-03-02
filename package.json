@@ -1,0 +1,21 @@
+{
+  "name": "portfolio-allocation-system",
+  "version": "1.0.0",
+  "description": "基于 Excel、Tushare 与 Supabase 的资产配置系统",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "NODE_ENV=production node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "axios": "^1.8.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "multer": "^2.0.2",
+    "node-cron": "^3.0.3",
+    "xlsx": "^0.18.5"
+  }
+}

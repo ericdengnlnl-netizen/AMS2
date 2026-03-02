@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>宏观研报中文聚合站</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/research.css" />
+  </head>
+  <body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Macro Research Hub</p>
+          <h1>多机构宏观研报中文聚合站</h1>
+          <p class="sub" id="lastSyncText">最近更新: --</p>
+        </div>
+        <div class="actions">
+          <a class="btn ghost" href="/">返回资产配置系统</a>
+          <button id="updateBtn" class="btn">立即更新</button>
+        </div>
+      </header>
+
+      <section class="card controls-card">
+        <div class="filters">
+          <label>
+            机构
+            <select id="sourceFilter">
+              <option value="">全部机构</option>
+            </select>
+          </label>
+          <label>
+            主题
+            <select id="topicFilter">
+              <option value="">全部主题</option>
+            </select>
+          </label>
+          <label>
+            起始日期
+            <input id="fromFilter" type="date" />
+          </label>
+          <label>
+            结束日期
+            <input id="toFilter" type="date" />
+          </label>
+          <label class="search-label">
+            关键词
+            <input id="searchInput" type="search" placeholder="标题或摘要关键词" />
+          </label>
+          <button id="searchBtn" class="btn ghost">筛选</button>
+        </div>
+        <p class="hint" id="sourceHint">--</p>
+      </section>
+
+      <section class="content-grid">
+        <div class="card list-card">
+          <div class="card-head">
+            <h2>最新内容</h2>
+            <span class="hint" id="countHint">--</span>
+          </div>
+          <div id="listContainer" class="list"></div>
+          <div class="pager">
+            <button id="prevBtn" class="btn ghost">上一页</button>
+            <span id="pageInfo">--</span>
+            <button id="nextBtn" class="btn ghost">下一页</button>
+          </div>
+        </div>
+
+        <div class="card detail-card">
+          <div class="card-head">
+            <h2>详情</h2>
+            <span class="hint">摘要优先，支持跳转原文</span>
+          </div>
+          <article id="detailContainer" class="detail-empty">请选择左侧内容查看详情。</article>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+    <script src="/research.js"></script>
+  </body>
+</html>

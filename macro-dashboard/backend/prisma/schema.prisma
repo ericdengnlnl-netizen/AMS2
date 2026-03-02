@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SeriesSource {
+  FRED
+  NBS
+}
+
+enum SeriesFrequency {
+  M
+  Q
+}
+
+enum TransformType {
+  YOY_LAG
+  INDEX_MINUS_100
+}
+
+enum TriggerType {
+  MANUAL
+  SCHEDULED
+}
+
+enum RunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+model MacroSeries {
+  id            String          @id @default(uuid()) @db.Uuid
+  seriesKey     String          @unique @map("series_key")
+  displayName   String          @map("display_name")
+  source        SeriesSource
+  frequency     SeriesFrequency
+  unit          String
+  transformType TransformType   @map("transform_type")
+  enabled       Boolean         @default(true)
+  meta          Json            @default("{}")
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  observations  MacroObservation[]
+
+  @@map("macro_series")
+}
+
+model MacroObservation {
+  id         BigInt      @id @default(autoincrement())
+  seriesId   String      @map("series_id") @db.Uuid
+  obsDate    DateTime    @map("obs_date") @db.Date
+  rawValue   Decimal     @map("raw_value") @db.Decimal(20, 6)
+  value      Decimal     @db.Decimal(20, 6)
+  sourceCode String      @map("source_code")
+  hasData    Boolean     @default(true) @map("has_data")
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  series     MacroSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@unique([seriesId, obsDate])
+  @@index([obsDate])
+  @@map("macro_observations")
+}
+
+model SyncRun {
+  id           String       @id @default(uuid()) @db.Uuid
+  triggerType  TriggerType  @map("trigger_type")
+  status       RunStatus
+  startedAt    DateTime     @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt   DateTime?    @map("finished_at") @db.Timestamptz(6)
+  stats        Json?
+  errorMessage String?      @map("error_message")
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  logs         SyncRunLog[]
+
+  @@index([startedAt(sort: Desc)])
+  @@map("sync_runs")
+}
+
+model SyncRunLog {
+  id        BigInt    @id @default(autoincrement())
+  runId     String    @map("run_id") @db.Uuid
+  seriesKey String?   @map("series_key")
+  stage     String
+  message   String
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  run       SyncRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@map("sync_run_logs")
+}
