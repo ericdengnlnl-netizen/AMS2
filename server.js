@@ -55,6 +55,7 @@ function parseViewerUsers(raw) {
 const viewerUsersMap = parseViewerUsers(VIEWER_USERS);
 
 function requireViewerAuth(req, res, next) {
+  if (req.path === '/api/health') return next();
   if (!ENABLE_VIEWER_AUTH) return next();
   if (!viewerUsersMap.size) {
     return res.status(500).json({
