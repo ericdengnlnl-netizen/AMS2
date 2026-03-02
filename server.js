@@ -165,6 +165,12 @@ function getYesterdayDateIso() {
   return isoDate(d);
 }
 
+function getTodayDateIso() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return isoDate(d);
+}
+
 function excelSerialToIsoDate(serial) {
   const n = Number(serial);
   if (!Number.isFinite(n)) return null;
@@ -229,10 +235,12 @@ function normalizeDirection(value) {
 
 function alignToTradingDate(targetDate, tradingDates) {
   if (!targetDate || !tradingDates.length) return null;
+  const lastTradingDate = tradingDates[tradingDates.length - 1];
+  if (targetDate > lastTradingDate) return null;
   for (const date of tradingDates) {
     if (date >= targetDate) return date;
   }
-  return tradingDates[tradingDates.length - 1] || null;
+  return null;
 }
 
 function findHeaderRow(rows, mustHaveLabels) {
@@ -705,7 +713,7 @@ async function syncPrices(options = {}) {
   if (!meta) throw new Error('请先导入初始估值表');
 
   const startDate = options.startDate || meta.inception_date;
-  const endDate = options.endDate || getYesterdayDateIso();
+  const endDate = options.endDate || getTodayDateIso();
 
   const [{ data: positionRows, error: positionError }, { data: rebalanceRows, error: rebalanceError }] =
     await Promise.all([
@@ -856,7 +864,7 @@ function buildValuationSeries({
   riskFreeRate = RISK_FREE_RATE
 }) {
   const inceptionDate = String(meta.inception_date);
-  const cutoffDate = endDate || getYesterdayDateIso();
+  const cutoffDate = endDate || getTodayDateIso();
   const inceptionValue = toNumber(meta.inception_value || meta.total_amount, 0);
 
   if (!(inceptionValue > 0)) {
@@ -1305,7 +1313,7 @@ async function computePortfolioValuation({ endDate, persistSnapshots = false } =
       .select('ts_code,trade_date,close_price,pre_close,pct_chg')
       .in('ts_code', tsCodes)
       .gte('trade_date', meta.inception_date)
-      .lte('trade_date', endDate || getYesterdayDateIso())
+      .lte('trade_date', endDate || getTodayDateIso())
       .order('trade_date', { ascending: true });
 
     if (priceError) throw priceError;
@@ -1317,7 +1325,7 @@ async function computePortfolioValuation({ endDate, persistSnapshots = false } =
     positions,
     transactions: txRows,
     prices,
-    endDate: endDate || getYesterdayDateIso(),
+    endDate: endDate || getTodayDateIso(),
     riskFreeRate: RISK_FREE_RATE
   });
 
