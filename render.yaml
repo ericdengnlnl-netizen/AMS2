@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: portfolio-valuation-internal
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: TUSHARE_TOKEN
+        sync: false
+      - key: RISK_FREE_RATE
+        value: "0.02"
+      - key: DEFAULT_PORTFOLIO_ID
+        value: default
+      - key: READ_ONLY_MODE
+        value: "true"
+      - key: ENABLE_VIEWER_AUTH
+        value: "true"
+      - key: VIEWER_USERS
+        sync: false
+      - key: WRITE_API_KEY
+        sync: false
